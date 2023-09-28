@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:developer';
 import 'dart:ffi';
+import 'dart:isolate';
 import 'dart:typed_data';
 
 import 'package:ffi/ffi.dart';
@@ -47,10 +48,23 @@ class ZContext {
   ///
   /// Note only one context should exist throughout your application
   /// and it should be closed if the app is disposed
-  ZContext() {
+  ZContext({final int pollInterval = 1}) {
     _context = _bindings.zmq_ctx_new();
     _poller = _bindings.zmq_poller_new();
-    _startPolling();
+    _startPolling(pollInterval: pollInterval);
+  }
+
+  void socketIsolate(SendPort sendPort) {
+    // Your socket creation, listening, and connection logic here
+    // For example, you can create a WebSocket connection
+    // and listen for messages.
+
+    // WebSocket.connect('ws://example.com/socket').then((socket) {
+    //   socket.listen((data) {
+    //     // Handle incoming data from the socket
+    //     sendPort.send(data);
+    //   });
+    // });
   }
 
   /// Shutdown zeromq. Will stop [_poll] asynchronously.
@@ -63,9 +77,10 @@ class ZContext {
 
   /// Starts the periodic polling task if it was not started already and
   /// if there are actually listeners on sockets
-  void _startPolling() {
+  void _startPolling({int pollInterval = 1}) {
     if (_timer == null && _listening.isNotEmpty) {
-      _timer = Timer.periodic(const Duration(seconds: 1), (timer) => _poll());
+      _timer =
+          Timer.periodic(Duration(seconds: pollInterval), (timer) => _poll());
     }
   }
 
